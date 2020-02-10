@@ -1,17 +1,25 @@
 package com.cy.view.domain.weibo;
 
+import lombok.Data;
+
 /**
  * @description: 微博话题信息实体
  * @author CaoYong
  * @date: 2020/2/10
  * @version 1.0
  */
+@Data
 public class Topic {
 
     /**
      * 主键
      */
     private Long id;
+
+    /**
+     * 话题链接
+     */
+    private String topicUrl;
 
     /**
      * 排名
