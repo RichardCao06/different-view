@@ -1,22 +1,23 @@
 package com.cy.view.domain.weibo;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
+import javax.persistence.*;
 import java.util.Date;
 import java.util.List;
 
-/**
- * @description: 微博信息实体
- * @author CaoYong
- * @date: 2020/2/10
- * @version 1.0
- */
 @Data
-public class Blog {
+@NoArgsConstructor
+@Entity
+@Table(name = "weibo_topsearch_tb")
+public class TopSearchBlog extends Blog {
 
     /**
      * 主键
      */
+    @Id
+    @GeneratedValue
     private Long id;
 
     /**
@@ -37,12 +38,13 @@ public class Blog {
     /**
      * 博客内容
      */
+    @Column(columnDefinition = "TEXT")
     private String content;
 
     /**
      * 话题信息
      */
-    private List<Topic> topicList;
+    //private List<Topic> topicList;
 
     /**
      * 发布时间
@@ -74,12 +76,6 @@ public class Blog {
      * 热搜关键字
      */
     private String keyword;
-
-
-
-
-
-
 
 
 }

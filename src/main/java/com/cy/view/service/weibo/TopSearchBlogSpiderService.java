@@ -1,8 +1,11 @@
 package com.cy.view.service.weibo;
 
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
 import com.cy.view.domain.weibo.Blog;
+import com.cy.view.domain.weibo.TopSearchBlog;
 import com.cy.view.domain.weibo.Topic;
+import com.cy.view.repository.weibo.TopSearchRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -16,6 +19,9 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import sun.net.www.http.HttpClient;
 
@@ -34,15 +40,21 @@ import java.util.List;
  * @date: 2020/2/10
  * @version
  */
+@Component
 @Slf4j
 @Service
 public class TopSearchBlogSpiderService {
 
     private Logger logger = LoggerFactory.getLogger(TopSearchBlogSpiderService.class);
 
-    /*private static final String topSearchRealtimeUrlTemplate = "https://s.weibo.com/realtime?q=%23{}%23&rd=realtime&tw=realtime&Refer=weibo_realtime&page={}";
+    @Autowired
+    TopSearchRepository topSearchRepository;
 
-    private static  final String COOKIE = "SINAGLOBAL=3525601727940.988.1581302234908; wvr=6; SUBP=0033WrSXqPxfM725Ws9jqgMF55529P9D9WhsxebFvSKMYXlP6uzl.mm15JpX5KMhUgL.Foef1Kq4SKn7eo22dJLoIEqLxK-LBo2LBo2LxK.LBKeL12-LxKBLBo.L12zLxK-LBozL1-8owBtt; UOR=,,login.sina.com.cn; webim_unReadCount=%7B%22time%22%3A1581307751918%2C%22dm_pub_total%22%3A0%2C%22chat_group_client%22%3A0%2C%22allcountNum%22%3A0%2C%22msgbox%22%3A0%7D; ALF=1612846826; SSOLoginState=1581310828; SCF=Ao9rVGiEihHQrRMGvH21bdfUjbL4X90pDvPN8bS4uRtN7we5TvjtEYdrRuteY8plUioGtRodJYb6X5yaO9kK5ww.; SUB=_2A25zRJM8DeRhGeVL4lQY9SbMyT2IHXVQM4P0rDV8PUNbmtANLWP8kW9NTDJ5VziYCIZ6R-DnQTdZtNcF1x8IPAO8; SUHB=0laV2Qw4IF0jTu; _s_tentry=login.sina.com.cn; Apache=5115489028811.262.1581310831995; ULV=1581310832183:4:4:4:5115489028811.262.1581310831995:1581306707687";*/
+
+
+    private static final String TopSearchRealtimeUrlTemplate = "https://s.weibo.com/realtime?q=%23{}%23&rd=realtime&tw=realtime&Refer=weibo_realtime&page={}";
+
+    private static  final String COOKIE = "SINAGLOBAL=3525601727940.988.1581302234908; wvr=6; SUBP=0033WrSXqPxfM725Ws9jqgMF55529P9D9WhsxebFvSKMYXlP6uzl.mm15JpX5KMhUgL.Foef1Kq4SKn7eo22dJLoIEqLxK-LBo2LBo2LxK.LBKeL12-LxKBLBo.L12zLxK-LBozL1-8owBtt; UOR=,,login.sina.com.cn; webim_unReadCount=%7B%22time%22%3A1581307751918%2C%22dm_pub_total%22%3A0%2C%22chat_group_client%22%3A0%2C%22allcountNum%22%3A0%2C%22msgbox%22%3A0%7D; ALF=1612846826; SSOLoginState=1581310828; SCF=Ao9rVGiEihHQrRMGvH21bdfUjbL4X90pDvPN8bS4uRtN7we5TvjtEYdrRuteY8plUioGtRodJYb6X5yaO9kK5ww.; SUB=_2A25zRJM8DeRhGeVL4lQY9SbMyT2IHXVQM4P0rDV8PUNbmtANLWP8kW9NTDJ5VziYCIZ6R-DnQTdZtNcF1x8IPAO8; SUHB=0laV2Qw4IF0jTu; _s_tentry=login.sina.com.cn; Apache=5115489028811.262.1581310831995; ULV=1581310832183:4:4:4:5115489028811.262.1581310831995:1581306707687";
 
     /**
      * 收集微博热搜信息
@@ -55,6 +67,7 @@ public class TopSearchBlogSpiderService {
 
         CloseableHttpClient client = HttpClients.createDefault();
         for (int i = 1; i <= 50; i++) {
+            System.out.println(StrUtil.format("第{}页",i));
 
             //拼接查询url
             String searchUrl = StrUtil.format(urlTemplate, keyword, i);
@@ -72,18 +85,37 @@ public class TopSearchBlogSpiderService {
                 System.out.println("连接异常：" + e);
             }
 
+            //数据存储
             if (result != null){
-                System.out.println(result);
-                List<Blog> topSearchBlogPageInfoList = this.getPageInfoFromResponse(result);
+                //System.out.println(result);
+                List<TopSearchBlog> topSearchBlogPageInfoList = this.getPageInfoFromResponse(result, keyword);
+                for (TopSearchBlog topSearchBlog : topSearchBlogPageInfoList) {
+                    if(topSearchRepository.findByBlogCode(topSearchBlog.getBlogCode()) == null){
+                        topSearchRepository.save(topSearchBlog);
+                    }
+                }
             }
 
             //休眠策略
             try {
-                Thread.sleep(3000 * (long)Math.random());
+                Thread.sleep(5000 * (long)Math.random());
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
+
+    }
+
+
+    /**
+     * 抓取微博热搜实时信息
+     * @param keyword
+     * @param cookie
+     */
+    public void collectRealtimeTopSearchBlog(String keyword, String cookie){
+
+        String topSearchRealtimeUrlTemplate = "https://s.weibo.com/realtime?q=%23{}%23&rd=realtime&tw=realtime&Refer=weibo_realtime&page={}";
+        this.collectTopSearchBlogInfo(keyword,cookie,topSearchRealtimeUrlTemplate);
 
     }
 
@@ -92,17 +124,17 @@ public class TopSearchBlogSpiderService {
      * @param result 页面爬取结果
      * @return
      */
-    private List<Blog> getPageInfoFromResponse(String result) {
+    private List<TopSearchBlog> getPageInfoFromResponse(String result, String keyword) {
 
         Document document = Jsoup.parse(result);
         Elements elements = document.select("#pl_feedlist_index > div:nth-child(1) > * ");
         int length = elements.toArray().length; //元素列表长度
-        List<Blog> pageBlogList = new ArrayList<>();
+        List<TopSearchBlog> pageBlogList = new ArrayList<>();
 
 
         for (int i = 1; i <= length; i++) {
 
-            Blog blog = new Blog();
+            TopSearchBlog blog = new TopSearchBlog();
             //获取信息发布人微博名称
             String nickNameCssPath = StrUtil.format("div:nth-child({}) > div > div.card-feed > div.content > div.info > div:nth-child(2) > a.name", i);
             String bloggerName = elements.select(nickNameCssPath).text();
@@ -117,7 +149,7 @@ public class TopSearchBlogSpiderService {
             //获取博客资源识别码
             String blogCodeCssPath = StrUtil.format("div:nth-child({})",i);
             String blogCode = elements.select(blogCodeCssPath).attr("mid");
-            System.out.println(blogCode);
+            //System.out.println(blogCode);
 
             //获取发布内容中的话题标签
             String tagCssPath = StrUtil.format("div:nth-child({}) > div > div.card-feed > div.content > p.txt > a", i);
@@ -137,12 +169,12 @@ public class TopSearchBlogSpiderService {
             //获取文章的转发数
             String transmitNumCssPath = StrUtil.format("div:nth-child({}) > div.card > div.card-act > ul > li:nth-child(2) > a",i);
             String transmitNumResult = elements.select(transmitNumCssPath).text();
-            System.out.println(transmitNumResult.length());
+            //System.out.println(transmitNumResult.length());
             Integer transmitNum = 0;
             if(!transmitNumResult.isEmpty() && transmitNumResult.length() > 3){
                 transmitNum = Integer.valueOf(StrUtil.sub(transmitNumResult, 6, -1)); //从第五个字符开始截取数据
             }
-            System.out.println(transmitNum);
+            //System.out.println(transmitNum);
 
             //获取文章评论数
             String commentNumCssPath = StrUtil.format("div:nth-child({}) > div.card > div.card-act > ul > li:nth-child(3) > a", i);
@@ -151,7 +183,7 @@ public class TopSearchBlogSpiderService {
             if(!commentNumResult.isEmpty() && commentNumResult.length() > 3){
                 commentNum = Integer.valueOf(StrUtil.sub(commentNumResult, 6, -1));
             }
-            System.out.println(commentNum);
+            //System.out.println(commentNum);
 
             //获取点赞数
             String likeNumCssPath = StrUtil.format("div:nth-child({}) > div.card > div.card-act > ul > li:nth-child(4) > a",i);
@@ -160,24 +192,32 @@ public class TopSearchBlogSpiderService {
             if(!likeNumResult.isEmpty()){
                 likeNum = Integer.valueOf(likeNumResult);
             }
-            System.out.println(likeNum);
+            //System.out.println(likeNum);
 
             //获取发布时间
             String timeCssPath = StrUtil.format("div:nth-child({}) > div.card > div.card-feed > div.content > p.from > a:nth-child(1)",i);
             String timeResult = elements.select(timeCssPath).text();
             Date time = transferWeiboTimeString(timeResult);
-            System.out.println(timeResult);
-            System.out.println("time:" + time);
+            //System.out.println(timeResult);
+            //System.out.println("time:" + time);
 
             //获取发布源
             String originCssPath = StrUtil.format("div:nth-child({}) > div.card > div.card-feed > div.content > p.from > a:nth-child(2)", i);
             String origin = elements.select(originCssPath).text();
-            System.out.println(origin);
+            //System.out.println(origin);
 
             blog.setBloggerName(bloggerName);
             blog.setBloggerUrl(bloggerUrl);
             blog.setContent(content);
-            blog.setTopicList(topics);
+            //blog.setTopicList(topics);
+            blog.setBlogCode(blogCode);
+            blog.setTransmitNum(transmitNum);
+            blog.setCommentNum(commentNum);
+            blog.setLikeNum(likeNum);
+            blog.setPostTime(time);
+            blog.setOrigin(origin);
+            blog.setKeyword(keyword);
+
 
             pageBlogList.add(blog);
 
