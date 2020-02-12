@@ -34,7 +34,7 @@ public class TopSearchBlogJob {
     /**
      * 定时抓取微博热搜实时信息
      */
-    @Scheduled(fixedDelay = 5 * 1000 * 60)
+    //@Scheduled(fixedDelay = 5 * 1000 * 60)
     public void CollectRealtimeTopSearchBlogTask(){
         String keyword = "上海虹桥枢纽已发现体温异常101人";
         log.info("【job】开始执行：{}", DateUtil.formatDateTime(new Date()));

@@ -90,6 +90,14 @@
             <version>1.10.2</version>
         </dependency>
 
+        <dependency>
+            <groupId>cn.wanghaomiao</groupId>
+            <artifactId>SeimiCrawler</artifactId>
+            <version>2.1.2</version>
+        </dependency>
+
+
+
 
     </dependencies>
     <build>

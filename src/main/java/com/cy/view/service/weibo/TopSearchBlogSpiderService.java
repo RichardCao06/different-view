@@ -40,7 +40,7 @@ import java.util.List;
  * @date: 2020/2/10
  * @version
  */
-@Component
+
 @Slf4j
 @Service
 public class TopSearchBlogSpiderService {
@@ -267,7 +267,7 @@ public class TopSearchBlogSpiderService {
                 System.out.println("时间转换异常：" + e);
             }
         }
-        /*else {
+        else {
             SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm");
             try {
                 time = simpleDateFormat.parse(timeResult);
@@ -276,7 +276,7 @@ public class TopSearchBlogSpiderService {
                 System.out.println("时间转换异常：" + e);
             }
 
-        }*/
+        }
         return time;
     }
 
